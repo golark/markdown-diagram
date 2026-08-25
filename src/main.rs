@@ -1,35 +1,46 @@
 use clap::Parser;
-use std::fs::File;
-use std::io::{BufReader, BufRead};
+use std::fs;
+use regex::Regex;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    /// input markdown file
     #[arg(short, long)]
     markdown: String,
-
 }
+
+#[derive(Debug)]
+struct Node {
+    text: String,
+    arrows: Vec<Box<Node>>
+}
+
+impl Node {
+    fn new(text: String) -> Self {
+        Node {
+            text,
+            arrows: Vec::new(), 
+        }
+    }
+}
+
 
 fn main() {
     let args = Args::parse();
+    eprintln!("reading file...");
 
-    let file = match File::open(&args.markdown) {
-        Ok(file) => file,
+    let content = match fs::read_to_string(&args.markdown) {
+        Ok(content) => content,
         Err(e) => {
-            eprintln!("Error opening file {}: {}", &args.markdown, e);
+            eprintln!("Error reading file {}: {}", &args.markdown, e);
             std::process::exit(1);
         }
     };
+    eprintln!("file read, {} bytes", content.len());
 
-    let reader = BufReader::new(file);
-    for line in reader.lines() {
-        match line {
-            Ok(line) => println!("{}", line),
-            Err(e) => {
-                eprintln!("Error reading line: {}", e);
-                std::process::exit(1);
-            }
-        }
-    }
+    let mut nodes = Node::new("x".to_string());
+    println!("{:?}", nodes);
+
+    //let re = Regex::new(r"(?P<prefix>[│├└─\s]*)(?P<arrow>[>v^])?\s*(?P<text>\[.*?\])").unwrap();
+    //eprintln!("regex compiled");
 }
